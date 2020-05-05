@@ -43,21 +43,25 @@ with  requests.Session() as s:
                         n.add_theard(theard_to_add)
         for th in n.list_of_theard:
             s2 = BeautifulSoup(s.get(root_url+ th.link).content, 'html.parser')
-            for c_post in s2.find_all(class_="post"):
-                poster = c_post.find(class_="postprofile-name").findChild().contents[0]
-                post_content =c_post.find(class_="content").findChild().text
-                if c_post.find(class_="vote-bar-desc") is not None:
-                    post_rep = c_post.find(class_="vote-bar-desc").text
-                else:
-                    post_rep = None
-                try:
-                    post_date = c_post.find(class_="topic-date").text[3:11]+"20"
-                    post_time = c_post.find(class_="topic-date").text[12:17]
-                except IndexError:
-                    post_date = None
-                    post_time = None
-                cp = ForumDateModel.Post(poster,post_content,post_date,post_time,post_rep)
-                th.add_post(cp)
+            pages =list(set([x.parent.contents[3]['href'] for x in s2.find_all(class_ = "page-sep")]))
+            pages.insert(0,th.link)
+            for page_link in pages:
+                s3 = BeautifulSoup(s.get(root_url + page_link).content, 'html.parser')
+                for c_post in s3.find_all(class_="post"):
+                    poster = c_post.find(class_="postprofile-name").findChild().contents[0]
+                    post_content =c_post.find(class_="content").findChild().text
+                    if c_post.find(class_="vote-bar-desc") is not None:
+                        post_rep = c_post.find(class_="vote-bar-desc").text
+                    else:
+                        post_rep = None
+                    try:
+                        post_date = c_post.find(class_="topic-date").text[3:11]+"20"
+                        post_time = c_post.find(class_="topic-date").text[12:17]
+                    except IndexError:
+                        post_date = None
+                        post_time = None
+                    cp = ForumDateModel.Post(poster,post_content,post_date,post_time,post_rep)
+                    th.add_post(cp)
 
         main_forum.add_subforum(n)
     for sub in main_forum.subforum:
