@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+message Forum{
+  repeated Subforum Sb = 1;
+}
+message Subforum{
+  repeated Theard theards = 1;
+}
+message Theard{
+  string title =1;
+  string author = 2;
+  string date =3;
+  sint32 views =4;
+  sint32 replies = 5;
+  string link = 6;
+  bool hot = 8;
+  bool lock = 9;
+  repeated Post posts = 10;
+  string last_poster = 11;
+  string recent_date = 12;
+}
+message Post{
+  string author = 1;
+  string content = 2;
+  string publication_time = 3;
+  string publication_date = 4;
+  string reputation = 5;
+}
