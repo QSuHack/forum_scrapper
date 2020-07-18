@@ -3,13 +3,9 @@ import requests
 from dotenv import load_dotenv
 import os
 
-
 import ForumDateModel
 
-
-def print_theard_func(form: ForumDateModel.Theard):
-    return form.text_form()
-
+import _pb2
 
 load_dotenv()
 login = os.getenv('LOGIN')
@@ -43,29 +39,53 @@ with  requests.Session() as session_:
                         sub_forum.add_theard(theard_to_add)
         for theard in sub_forum.list_of_theard:
             soup2 = BeautifulSoup(session_.get(root_url + theard.link).content, 'html.parser')
-            pages =list(set([x.parent.contents[3]['href'] for x in soup2.find_all(class_ ="page-sep")]))
+            pages = list(set([x.parent.contents[3]['href'] for x in soup2.find_all(class_="page-sep")]))
             pages.insert(0, theard.link)
             for page_link in pages:
                 soup3 = BeautifulSoup(session_.get(root_url + page_link).content, 'html.parser')
                 for c_post in soup3.find_all(class_="post"):
                     poster = c_post.find(class_="postprofile-name").findChild().contents[0]
-                    post_content =c_post.find(class_="content").findChild().text
+                    post_content = c_post.find(class_="content").findChild().text
                     if c_post.find(class_="vote-bar-desc") is not None:
                         post_rep = c_post.find(class_="vote-bar-desc").text
                     else:
                         post_rep = None
                     try:
-                        post_date = c_post.find(class_="topic-date").text[3:11]+"20"
+                        post_date = c_post.find(class_="topic-date").text[3:11] + "20"
                         post_time = c_post.find(class_="topic-date").text[12:17]
                     except IndexError:
                         post_date = None
                         post_time = None
-                    cp = ForumDateModel.Post(poster,post_content,post_date,post_time,post_rep)
+                    cp = ForumDateModel.Post(poster, post_content, post_date, post_time, post_rep)
                     theard.add_post(cp)
 
         main_forum.add_subforum(sub_forum)
+    # for subforum in main_forum.subforum:
+    #     for theard in subforum.list_of_theard:
+    #         theard.text_form()
+    #         for post in theard.list_of_post:
+    #             print(str(post))
+
+    forum_backup = _pb2.Forum()
     for subforum in main_forum.subforum:
+        s = forum_backup.Sb.add()
         for theard in subforum.list_of_theard:
-            theard.text_form()
+            th = s.theards.add()
+            th.title = str(theard.title)
+            th.author = str(theard.author)
+            th.views = int(theard.views)
+            th.replies = int(theard.replies)
+            th.link = str(theard.link)
+            th.hot = theard.is_hot
+            th.lock = theard.locked
+            th.recent_date = str(theard.recent_date)
+            th.last_poster = str(theard.last_poster)
             for post in theard.list_of_post:
-                print(str(post))
+                ps = th.posts.add()
+                ps.author = str(post.author)
+                ps.content = str(post.content)
+                ps.publication_date = str(post.date)
+                ps.publication_time = str(post.time)
+                ps.reputation = str(post.post_reputation)
+    with open("backup", mode="wb+") as backup:
+        backup.write(forum_backup.SerializeToString())
